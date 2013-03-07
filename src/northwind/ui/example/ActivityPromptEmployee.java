@@ -122,7 +122,7 @@ public class ActivityPromptEmployee extends Activity {
 	}
 	void tap(String id) {
 		Intent intent = this.getIntent();
-		intent.putExtra("customerID", id);
+		intent.putExtra("employeeID", id);
 		this.setResult(RESULT_OK, intent);
 		finish();
 	}
