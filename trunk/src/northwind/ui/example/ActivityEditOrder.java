@@ -21,7 +21,6 @@ public class ActivityEditOrder extends Activity {
 	Numeric requiredDate = new Numeric();
 	Numeric shippedDate = new Numeric();
 	Numeric viaID = new Numeric();
-	//Note viaName = new Note();
 	Note shipName = new Note();
 	Note shipAddress = new Note();
 	Note shipCity = new Note();
@@ -33,6 +32,9 @@ public class ActivityEditOrder extends Activity {
 	ColumnDescription columnProduct = new ColumnDescription();
 	ColumnDescription columnPrice = new ColumnDescription();
 	ColumnDescription columnQuantity = new ColumnDescription();
+	final static int REQUEST_CUSTOMER = 1;
+	final static int REQUEST_EMPLOYEE = 2;
+	final static int REQUEST_ITEM = 3;
 	Task save = new Task() {
 		@Override
 		public void doTask() {
@@ -56,7 +58,7 @@ public class ActivityEditOrder extends Activity {
 		public void doTask() {
 			Intent intent = new Intent();
 			intent.setClass(ActivityEditOrder.this, ActivityPromptEmployee.class);
-			ActivityEditOrder.this.startActivityForResult(intent, 0);
+			ActivityEditOrder.this.startActivityForResult(intent, REQUEST_EMPLOYEE);
 		}
 	};
 	Task promptCustomer = new Task() {
@@ -64,7 +66,7 @@ public class ActivityEditOrder extends Activity {
 		public void doTask() {
 			Intent intent = new Intent();
 			intent.setClass(ActivityEditOrder.this, ActivityPromptCustomer.class);
-			ActivityEditOrder.this.startActivityForResult(intent, 0);
+			ActivityEditOrder.this.startActivityForResult(intent, REQUEST_CUSTOMER);
 		}
 	};
 
@@ -176,7 +178,6 @@ public class ActivityEditOrder extends Activity {
 				.bitmap.is(BitmapFactory.decodeResource(getResources(), R.drawable.snowflakes4)).top().is(layoutless.height().property.minus(250)).width().is(400)//
 						.height().is(250)//
 				);
-		//System.out.println("viaID "+viaID.value());
 		layoutless.field(this, 0, "ID", new Decor(this).labelText.is(id).labelAlignLeftCenter().labelStyleMediumNormal());
 		layoutless.field(this, 1, "Order freight", new Decor(this).labelText.is(freight).labelAlignLeftCenter().labelStyleMediumNormal());
 		layoutless.field(this, 2, "Order date", new Decor(this).labelText.is(date).labelAlignLeftCenter().labelStyleMediumNormal(), 3 * Auxiliary.tapSize);
@@ -252,6 +253,36 @@ public class ActivityEditOrder extends Activity {
 		intent.setClass(this, ActivityEditItem.class);
 		intent.putExtra("product", productID);
 		intent.putExtra("order", id.value());
-		this.startActivityForResult(intent, 0);
+		this.startActivityForResult(intent, REQUEST_ITEM);
+	}
+	void onCustomerResult(String id) {
+		String sql = "select CompanyName,City from Customers where CustomerID='" + id + "'";
+		Bough data = Auxiliary.fromCursor(Tools.db(this).rawQuery(sql, null), true);
+		Bough row = data.children.get(0);
+		customerID.value(id);
+		customerName.value(row.child("CompanyName").value.property.value() + ", " + row.child("City").value.property.value());
+	}
+	void onEmployeeResult(String id) {
+		String sql = "select FirstName,LastName from Employees where EmployeeID=" + id;
+		Bough data = Auxiliary.fromCursor(Tools.db(this).rawQuery(sql, null), true);
+		Bough row = data.children.get(0);
+		employeeID.value(id);
+		employeeName.value(row.child("FirstName").value.property.value() + " " + row.child("LastName").value.property.value());
+	}
+	void onItemResult() {
+	}
+	@Override
+	protected void onActivityResult(int requestCode, int resultCode, Intent intent) {
+		if (resultCode == RESULT_OK) {
+			if (requestCode == REQUEST_CUSTOMER) {
+				onCustomerResult(intent.getStringExtra("customerID"));
+			}
+			if (requestCode == REQUEST_EMPLOYEE) {
+				onEmployeeResult(intent.getStringExtra("employeeID"));
+			}
+			if (requestCode == REQUEST_ITEM) {
+				onItemResult();
+			}
+		}
 	}
 }
