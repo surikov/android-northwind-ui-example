@@ -18,9 +18,26 @@ public class ActivityShowOrders extends Activity {
 	ColumnText columnCustomer = new ColumnText();
 	ColumnText columnFreight = new ColumnText();
 	ColumnDescription columnMenu = new ColumnDescription();
+	ColumnBitmap columnIcon = new ColumnBitmap();
 	DataGrid orders;
+	Toggle shippedOnly = new Toggle();
 	Numeric ordersOffset = new Numeric().value(0);
 	int pageSize = 25;
+	Task newOrder = new Task() {
+		@Override
+		public void doTask() {
+			Intent intent = new Intent();
+			intent.setClass(ActivityShowOrders.this, ActivityEditOrder.class);
+			ActivityShowOrders.this.startActivityForResult(intent, 0);
+		}
+	};
+	Task filter = new Task() {
+		@Override
+		public void doTask() {
+			shippedOnly.value(!shippedOnly.value());
+			refresh.start(ActivityShowOrders.this);
+		}
+	};
 	Expect refresh = new Expect().status.is("Wait...").task.is(new Task() {
 		@Override
 		public void doTask() {
@@ -37,15 +54,17 @@ public class ActivityShowOrders extends Activity {
 	});
 
 	void requery() {
-		//System.out.println("requery " + ordersOffset.value().intValue());
 		String sql = "select"// 
 				+ " 		Orders.rowid,Orders.OrderID,Orders.OrderDate,Orders.RequiredDate,Orders.ShippedDate,Orders.Freight"//
 				+ " 		,Customers.CompanyName as Customer,Shippers.CompanyName as Shipper,Employees.FirstName,Employees.LastName"//
 				+ " 	from Orders"//
 				+ " 		join Customers on Customers.CustomerID=Orders.CustomerID"//
 				+ " 		join Shippers on Shippers.ShipperID=Orders.ShipVia"//
-				+ " 		join Employees on Employees.EmployeeID=Orders.EmployeeID"//
-				+ " 	order by Orders.OrderDate desc,Orders.OrderID desc"//
+				+ " 		join Employees on Employees.EmployeeID=Orders.EmployeeID";
+		if (shippedOnly.value()) {
+			sql = sql + "	where ifnull(shippedDate,'')=''";
+		}
+		sql = sql + " 	order by Orders.OrderDate desc,Orders.OrderID desc"//
 				+ " limit " + (pageSize * 3) + " offset " + ordersOffset.value().intValue();
 		Bough data = Auxiliary.fromCursor(Tools.db(this).rawQuery(sql, null), true);
 		//System.out.println("requery done " + data.children.size());
@@ -90,14 +109,14 @@ public class ActivityShowOrders extends Activity {
 	}
 	void compose() {
 		columnMenu//
-				.cell("New orders", "Create new order")//
-				.cell("Cusomers", "Show all cusomers")//
-				.cell("Employees", "Show all employees")//
-				.cell("Products", "Show all products")//
-				.cell("Shippers", "Show all shippers")//
-				.cell("Suppliers", "Show all suppliers")//
+				.cell("New ordes", newOrder, "Create new order")//
+				.cell("Unhipped orders only", filter, "Show/hide shipped orders")//
 		;
-		Numeric menuSplit = new Numeric().value(Auxiliary.screenWidth(this));
+		columnIcon//
+				.cell(Bitmap.createScaledBitmap(BitmapFactory.decodeResource(getResources(), R.drawable.add), Auxiliary.tapSize, Auxiliary.tapSize, true))//
+				.cell(Bitmap.createScaledBitmap(BitmapFactory.decodeResource(getResources(), R.drawable.filter), Auxiliary.tapSize, Auxiliary.tapSize, true))//
+		;
+		Numeric menuSplit = new Numeric().value(0.8 * Auxiliary.screenWidth(this));
 		layoutless.child(new Decor(this)//
 				.background.is(Auxiliary.colorBackground)//
 						.sketch(new SketchPlate().tint(new TintBitmapTile()//
@@ -164,8 +183,9 @@ public class ActivityShowOrders extends Activity {
 				.split.is(menuSplit)//
 						.rightSide(new DataGrid(this)//
 								.noHead.is(true)//
-										.columns(new Column[] {// 
-												columnMenu.title.is("Menu").width.is(layoutless.width().property) // 
+										.columns(new Column[] {//
+												columnIcon.title.is("Icon").width.is(Auxiliary.tapSize) //
+														, columnMenu.title.is("Menu").width.is(layoutless.width().property).noVerticalBorder.is(true) //
 												})//
 						)//
 						.width().is(layoutless.width().property)//

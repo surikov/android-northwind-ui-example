@@ -38,6 +38,8 @@
         </activity>
         <activity android:name=".ActivityEditOrder" />
         <activity android:name="ActivityEditItem" />
+        <activity android:name="ActivityPromptCustomer" />
+        <activity android:name="ActivityPromptEmployee" />
         <activity android:name="ActivityPromptProduct" />
     </application>
 
