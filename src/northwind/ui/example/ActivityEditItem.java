@@ -26,6 +26,25 @@ public class ActivityEditItem extends Activity {
 	Numeric orderPrice = new Numeric();
 	Numeric orderDiscount = new Numeric();
 	Numeric orderQuantity = new Numeric();
+	Task save = new Task() {
+		@Override
+		public void doTask() {
+		}
+	};
+	Task delete = new Task() {
+		@Override
+		public void doTask() {
+		}
+	};
+	Task prompt = new Task() {
+		@Override
+		public void doTask() {
+			Intent intent = new Intent();
+			intent.setClass(ActivityEditItem.this, ActivityPromptProduct.class);
+			ActivityEditItem.this.startActivityForResult(intent, 0);
+		}
+	};
+
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
@@ -63,7 +82,6 @@ public class ActivityEditItem extends Activity {
 				+ " 	join Employees on Orders.EmployeeID=Employees.EmployeeID"//
 				+ " 	join Customers on Orders.CustomerID=Customers.CustomerID"//
 				+ "	where details.OrderID=" + o + " and details.ProductID=" + p;
-		//System.out.println(sql);
 		Bough data = Auxiliary.fromCursor(Tools.db(this).rawQuery(sql, null), true);
 		Bough row = data.children.get(0);
 		orderDate.value(Tools.formatDate(Auxiliary.date(row.child("OrderDate").value.property.value())));
@@ -74,11 +92,10 @@ public class ActivityEditItem extends Activity {
 		orderPrice.value(Numeric.string2double(row.child("OrderUnitPrice").value.property.value()));
 		orderDiscount.value(Numeric.string2double(row.child("Discount").value.property.value()));
 		orderQuantity.value(Numeric.string2double(row.child("Quantity").value.property.value()));
-		//quantityPerUnit.value(row.child("QuantityPerUnit").value.property.value());
 	}
 	void compose() {
 		layoutless//
-		.innerHeight.is(10 * 0.8 * Auxiliary.tapSize)//
+		.innerHeight.is(11 * 0.8 * Auxiliary.tapSize)//
 		.innerWidth.is(9 * Auxiliary.tapSize)//
 		;
 		layoutless.child(new Decor(this)//
@@ -100,45 +117,48 @@ public class ActivityEditItem extends Activity {
 						.height().is(layoutless.height().property)//
 				);
 		layoutless.child(new Decor(this)//
-				.bitmap.is(BitmapFactory.decodeResource(getResources(), R.drawable.snowflakes4)).top().is(layoutless.height().property.minus(250)).width().is(400)//
+				.bitmap.is(BitmapFactory.decodeResource(getResources(), R.drawable.snowflakes4))//
+						.top().is(layoutless.height().property.minus(250))//
+						.width().is(400)//
 						.height().is(250)//
 				);
 		layoutless.field(this, 0, "Order ID", new Decor(this).labelText.is(order).labelAlignLeftCenter().labelStyleMediumNormal());
 		layoutless.field(this, 1, "Order date", new Decor(this).labelText.is(orderDate).labelAlignLeftCenter().labelStyleMediumNormal());
 		layoutless.field(this, 2, "Employee", new Decor(this).labelText.is(orderEmplyee).labelAlignLeftCenter().labelStyleMediumNormal());
 		layoutless.field(this, 3, "Customer", new Decor(this).labelText.is(orderCustomer).labelAlignLeftCenter().labelStyleMediumNormal());
-		layoutless.field(this, 4, "Product", new KnobText(this).text.is(orderProduct).afterTap.is(new Task() {
-			@Override
-			public void doTask() {
-				promptProduct();
-			}
-		}), 7 * Auxiliary.tapSize);
+		layoutless.field(this, 4, "Product", new KnobText(this).text.is(orderProduct).afterTap.is(prompt), 7 * Auxiliary.tapSize);
 		layoutless.field(this, 5, "Stock price", new Decor(this).labelText.is(stockPrice).labelAlignLeftCenter().labelStyleMediumNormal());
 		layoutless.field(this, 6, "Price", new RedactNumber(this).number.is(orderPrice), 2 * Auxiliary.tapSize);
 		layoutless.field(this, 7, "Descount", new RedactNumber(this).number.is(orderDiscount), 2 * Auxiliary.tapSize);
 		layoutless.field(this, 8, "Quantity", new RedactNumber(this).number.is(orderQuantity), 2 * Auxiliary.tapSize);
-		//layoutless.field(this, 9, "Quantity per unit", new Decor(this).labelText.is(quantityPerUnit.value()).labelAlignLeftCenter().labelStyleMediumNormal());
-	}
-	void promptProduct() {
-		//System.out.println("promptProduct");
-		Intent intent = new Intent();
-		intent.setClass(this, ActivityPromptProduct.class);
-		//intent.putExtra("id", orderID);
-		this.startActivityForResult(intent, 0);
+		layoutless.child(new Knob(this)//
+				.labelText.is("Save")//
+				.afterTap.is(save)//
+						.top().is(layoutless.shiftY.property.plus(0.2 * Auxiliary.tapSize).plus(0.8 * 9 * Auxiliary.tapSize))//
+						.left().is(layoutless.shiftX.property.plus(layoutless.width().property.multiply(0.3).plus(0.1 * Auxiliary.tapSize)))//
+						.width().is(3 * Auxiliary.tapSize)//
+						.height().is(0.8 * Auxiliary.tapSize)//
+				);
+		layoutless.child(new Knob(this)//
+				.labelText.is("Delete")//
+				.afterTap.is(delete)//
+						.top().is(layoutless.shiftY.property.plus(0.2 * Auxiliary.tapSize).plus(0.8 * 9 * Auxiliary.tapSize))//
+						.left().is(layoutless.shiftX.property.plus(layoutless.width().property.multiply(0.3).plus(0.1 * Auxiliary.tapSize + 3 * Auxiliary.tapSize)))//
+						.width().is(3 * Auxiliary.tapSize)//
+						.height().is(0.8 * Auxiliary.tapSize)//
+				);
 	}
 	@Override
 	protected void onActivityResult(int requestCode, int resultCode, Intent intent) {
 		if (requestCode == 0) {
 			if (resultCode == RESULT_OK) {
 				String productID = intent.getStringExtra("productID");
-				//System.out.println("promptProduct "+productID);
 				String sql = "select"//
 						+ "		Products.ProductName,Products.QuantityPerUnit,Products.UnitPrice as ProductUnitPrice"//
 						+ "		,Products.CategoryID,Categories.CategoryName"//
 						+ "	from Products"//
 						+ "		join Categories on Categories.CategoryID=Products.CategoryID"//
 						+ "	where Products.ProductID=" + productID;
-				//System.out.println(sql);
 				Bough data = Auxiliary.fromCursor(Tools.db(this).rawQuery(sql, null), true);
 				Bough row = data.children.get(0);
 				orderProduct.value(row.child("ProductName").value.property.value() + ", " + row.child("CategoryName").value.property.value());

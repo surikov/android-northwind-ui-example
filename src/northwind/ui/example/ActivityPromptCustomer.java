@@ -9,7 +9,7 @@ import tee.binding.*;
 import tee.binding.it.*;
 import tee.binding.task.*;
 
-public class ActivityPromptProduct extends Activity {
+public class ActivityPromptCustomer extends Activity {
 	Layoutless layoutless;
 	Note seekProduct = new Note().afterChange(new CannyTask() {
 		@Override
@@ -21,10 +21,10 @@ public class ActivityPromptProduct extends Activity {
 			}
 		}
 	}.laziness.is(200), true);
-	ColumnDescription columnName = new ColumnDescription();
-	ColumnDescription columnSupplier = new ColumnDescription();
-	ColumnText columnPrice = new ColumnText();
-	ColumnDescription columnStock = new ColumnDescription();
+	ColumnText columnName = new ColumnText();
+	ColumnDescription columnAddress = new ColumnDescription();
+	ColumnDescription columnPhone = new ColumnDescription();
+	ColumnDescription columnContact = new ColumnDescription();
 	DataGrid grid;
 	Numeric offset = new Numeric().value(0);
 	int pageSize = 25;
@@ -48,7 +48,7 @@ public class ActivityPromptProduct extends Activity {
 		super.onCreate(savedInstanceState);
 		layoutless = new Layoutless(this);
 		setContentView(layoutless);
-		this.setTitle("Northwind UI Example - Products");
+		this.setTitle("Northwind UI Example - Customers");
 		compose();
 		refresh.start(this);
 	}
@@ -65,7 +65,7 @@ public class ActivityPromptProduct extends Activity {
 						.height().is(layoutless.height().property)//
 				);
 		layoutless.child(new Decor(this)//
-				.labelText.is("Products")//
+				.labelText.is("Customers")//
 				.labelSize.is(0.2 * Auxiliary.screenWidth(this))//
 				.labelColor.is(0xccffffff)//
 						.width().is(layoutless.width().property)//
@@ -96,15 +96,14 @@ public class ActivityPromptProduct extends Activity {
 				.beforeFlip.is(new Task() {
 					@Override
 					public void doTask() {
-						System.out.println("grid beforeFlip");
 						requery();
 					}
 				})//
 				.center.is(true)//
-						.columns(new Column[] { columnName.title.is("Product").width.is(5 * Auxiliary.tapSize)//
-								, columnSupplier.title.is("Supplier").width.is(4 * Auxiliary.tapSize)//
-								, columnPrice.title.is("Price").width.is(1 * Auxiliary.tapSize)//
-								, columnStock.title.is("Stock").width.is(2 * Auxiliary.tapSize) //
+						.columns(new Column[] { columnName.title.is("Name").width.is(3 * Auxiliary.tapSize)//
+								, columnContact.title.is("Contact").width.is(4 * Auxiliary.tapSize)//
+								, columnPhone.title.is("Phone/Fax").width.is(3 * Auxiliary.tapSize)//
+								, columnAddress.title.is("Address").width.is(3 * Auxiliary.tapSize) //
 								})//
 						.left().is(1)//
 						.top().is(Auxiliary.tapSize)//
@@ -112,38 +111,32 @@ public class ActivityPromptProduct extends Activity {
 						.height().is(layoutless.height().property.minus(Auxiliary.tapSize))//
 				);
 	}
-	void tapProduct(String productID) {
+	void tap(String id) {
 		Intent intent = this.getIntent();
-		intent.putExtra("productID", productID);
+		intent.putExtra("customerID", id);
 		this.setResult(RESULT_OK, intent);
 		finish();
 	}
 	void requery() {
-		String sql = "select "//
-				+ "\n	Products.ProductID,Products.ProductName,Products.QuantityPerUnit,Products.UnitPrice,Products.UnitsInStock"//
-				+ "\n	,Suppliers.CompanyName,Suppliers.Country,Suppliers.City"//
-				+ "\n	,Categories.CategoryName,Categories.Description"//
-				+ "\n	from Products"//
-				+ "\n	join Categories on Categories.CategoryID=Products.CategoryID"//
-				+ "\n	join Suppliers on Suppliers.SupplierID=Products.SupplierID";
+		String sql = "select * from Customers";
 		String seek = seekProduct.value().trim().toUpperCase();
-		sql = sql + "\n	where upper(Products.ProductName) like '%" + seek + "%' or upper(Categories.Description) like '%" + seek + "%'";
-		sql = sql + "\n	order by Categories.Description,Products.ProductName"//
+		sql = sql + "\n	where upper(Customers.CompanyName) like '%" + seek + "%' or upper(Customers.ContactName) like '%" + seek + "%'";
+		sql = sql + "\n	order by Customers.CompanyName"//
 				+ "\n limit " + (pageSize * 3) + " offset " + offset.value().intValue();
 		data = Auxiliary.fromCursor(Tools.db(this).rawQuery(sql, null), true);
 		for (int i = 0; i < data.children.size(); i++) {
 			Bough row = data.children.get(i);
-			final String productID = row.child("ProductID").value.property.value();
-			Task tapOrder = new Task() {
+			final String id = row.child("CustomerID").value.property.value();
+			Task tap = new Task() {
 				@Override
 				public void doTask() {
-					tapProduct(productID);
+					tap(id);
 				}
 			};
-			columnName.cell(row.child("ProductName").value.property.value(), tapOrder, row.child("Description").value.property.value());
-			columnSupplier.cell(row.child("CompanyName").value.property.value(), tapOrder, row.child("City").value.property.value() + ", " + row.child("Country").value.property.value());
-			columnPrice.cell(row.child("UnitPrice").value.property.value(), tapOrder);
-			columnStock.cell(row.child("UnitsInStock").value.property.value(), tapOrder, row.child("QuantityPerUnit").value.property.value());
+			columnName.cell(row.child("CompanyName").value.property.value(), tap);
+			columnContact.cell(row.child("ContactName").value.property.value(), tap, row.child("ContactTitle").value.property.value() + ", " + row.child("Country").value.property.value());
+			columnPhone.cell(row.child("Phone").value.property.value(), tap, row.child("Fax").value.property.value());
+			columnAddress.cell(row.child("City").value.property.value() + ", " + row.child("Country").value.property.value(), tap, row.child("Address").value.property.value());
 		}
 	}
 }
