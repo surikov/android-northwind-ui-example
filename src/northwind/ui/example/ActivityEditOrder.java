@@ -170,7 +170,7 @@ public class ActivityEditOrder extends Activity {
 		layoutless.child(new Decor(this)//
 				.labelText.is("Order")//
 				.labelSize.is(0.2 * Auxiliary.screenWidth(this))//
-				.labelColor.is(0xccffffff)//
+				.labelColor.is(0x22006699)//
 						.width().is(layoutless.width().property)//
 						.height().is(layoutless.height().property)//
 				);
@@ -245,7 +245,7 @@ public class ActivityEditOrder extends Activity {
 						.width().is(layoutless.width().property)//
 						.height().is(layoutless.height().property)//
 				);
-		layoutless.innerWidth.is(Auxiliary.screenWidth(this) * 0.3 + 5.1 * Auxiliary.tapSize);
+		layoutless.innerWidth.is(Auxiliary.screenWidth(this) * 0.3 + 9.1 * Auxiliary.tapSize);
 		layoutless.innerHeight.is(0.8 * 15 * Auxiliary.tapSize + 2 * 0.2 * Auxiliary.tapSize);
 	}
 	void tapItem(String productID) {

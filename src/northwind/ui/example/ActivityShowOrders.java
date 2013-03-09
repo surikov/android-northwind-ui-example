@@ -132,7 +132,7 @@ public class ActivityShowOrders extends Activity {
 				.labelText.is("Orders")//
 				.labelSize.is(0.2 * Auxiliary.screenWidth(this))//
 				//.labelColor.is(0x11006699)//
-				.labelColor.is(0xccffffff)//
+				.labelColor.is(0x22006699)//
 						.width().is(layoutless.width().property)//
 						.height().is(layoutless.height().property)//
 				);
