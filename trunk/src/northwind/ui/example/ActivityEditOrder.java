@@ -9,6 +9,7 @@ import android.app.*;
 import android.content.*;
 import android.graphics.*;
 
+
 public class ActivityEditOrder extends Activity {
 	Note id = new Note();
 	Layoutless layoutless;
@@ -38,13 +39,28 @@ public class ActivityEditOrder extends Activity {
 	Task save = new Task() {
 		@Override
 		public void doTask() {
-			System.out.println("save");
+			//System.out.println("save");
+			if (id.value().trim().length() > 0) {
+				
+			}else{
+				insert();
+			}
 		}
 	};
 	Task delete = new Task() {
 		@Override
 		public void doTask() {
-			System.out.println("delete");
+			if (id.value().trim().length() > 0) {
+				Auxiliary.pick3Choice(ActivityEditOrder.this, "Delete order", "Are you sure?", "Delete", new Task() {
+					@Override
+					public void doTask() {
+						//System.out.println("delete");
+						Tools.db(ActivityEditOrder.this).execSQL("delete from [Order Items] where OrderID="+id.value());
+						Tools.db(ActivityEditOrder.this).execSQL("delete from Orders where OrderID="+id.value());
+						ActivityEditOrder.this.finish();
+					}
+				}, null, null, null, null);
+			}
 		}
 	};
 	Task promptNewItem = new Task() {
@@ -69,7 +85,9 @@ public class ActivityEditOrder extends Activity {
 			ActivityEditOrder.this.startActivityForResult(intent, REQUEST_CUSTOMER);
 		}
 	};
-
+	void insert(){
+		
+	}
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
@@ -80,12 +98,10 @@ public class ActivityEditOrder extends Activity {
 				this.setTitle("Northwind UI Example - Order " + s);
 				id.value(s);
 				scatterOrder(id.value());
-			}
-			else {
+			} else {
 				this.setTitle("Northwind UI Example - New order");
 			}
-		}
-		else {
+		} else {
 			this.setTitle("Northwind UI Example - New order");
 		}
 		layoutless = new Layoutless(this);
@@ -229,7 +245,9 @@ public class ActivityEditOrder extends Activity {
 						.height().is(layoutless.height().property)//
 				);
 		layoutless.child(new Decor(this)//
-				.bitmap.is(BitmapFactory.decodeResource(getResources(), R.drawable.snowflake2)).left().is(itemsSplit).width().is(322)//
+				.bitmap.is(BitmapFactory.decodeResource(getResources(), R.drawable.snowflake2))//
+						.left().is(itemsSplit)//
+						.width().is(322)//
 						.height().is(406)//
 				);
 		layoutless.child(new SplitLeftRight(this)//
