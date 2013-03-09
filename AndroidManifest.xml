@@ -36,6 +36,7 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+	
         <activity android:name=".ActivityEditOrder" />
         <activity android:name="ActivityEditItem" />
         <activity android:name="ActivityPromptCustomer" />
