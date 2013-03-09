@@ -67,7 +67,7 @@ public class ActivityPromptCustomer extends Activity {
 		layoutless.child(new Decor(this)//
 				.labelText.is("Customers")//
 				.labelSize.is(0.2 * Auxiliary.screenWidth(this))//
-				.labelColor.is(0xccffffff)//
+				.labelColor.is(0x22006699)//
 						.width().is(layoutless.width().property)//
 						.height().is(layoutless.height().property)//
 				);

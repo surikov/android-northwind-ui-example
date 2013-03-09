@@ -112,7 +112,7 @@ public class ActivityEditItem extends Activity {
 		layoutless.child(new Decor(this)//
 				.labelText.is("Item")//
 				.labelSize.is(0.2 * Auxiliary.screenWidth(this))//
-				.labelColor.is(0xccffffff)//
+				.labelColor.is(0x22006699)//
 						.width().is(layoutless.width().property)//
 						.height().is(layoutless.height().property)//
 				);
