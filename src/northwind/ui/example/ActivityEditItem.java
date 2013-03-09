@@ -96,7 +96,7 @@ public class ActivityEditItem extends Activity {
 	void compose() {
 		layoutless//
 		.innerHeight.is(11 * 0.8 * Auxiliary.tapSize)//
-		.innerWidth.is(9 * Auxiliary.tapSize)//
+		.innerWidth.is(10 * Auxiliary.tapSize)//
 		;
 		layoutless.child(new Decor(this)//
 				.background.is(Auxiliary.colorBackground)//
