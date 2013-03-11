@@ -7,17 +7,17 @@ import tee.binding.task.*;
 import android.os.*;
 import android.app.*;
 import android.content.*;
+import android.database.sqlite.SQLiteStatement;
 import android.graphics.*;
-
 
 public class ActivityEditOrder extends Activity {
 	Note id = new Note();
 	Layoutless layoutless;
-	Note freight = new Note();
-	Note date = new Note();
+	Numeric freight = new Numeric();
+	Note orderDate = new Note();
 	Note customerID = new Note();
 	Note customerName = new Note();
-	Note employeeID = new Note();
+	Numeric employeeID = new Numeric();
 	Note employeeName = new Note();
 	Numeric requiredDate = new Numeric();
 	Numeric shippedDate = new Numeric();
@@ -39,11 +39,15 @@ public class ActivityEditOrder extends Activity {
 	Task save = new Task() {
 		@Override
 		public void doTask() {
-			//System.out.println("save");
 			if (id.value().trim().length() > 0) {
-				
-			}else{
-				insert();
+				if (update()) {
+					finish();
+				}
+			}
+			else {
+				if (insert()) {
+					finish();
+				}
 			}
 		}
 	};
@@ -54,9 +58,8 @@ public class ActivityEditOrder extends Activity {
 				Auxiliary.pick3Choice(ActivityEditOrder.this, "Delete order", "Are you sure?", "Delete", new Task() {
 					@Override
 					public void doTask() {
-						//System.out.println("delete");
-						Tools.db(ActivityEditOrder.this).execSQL("delete from [Order Items] where OrderID="+id.value());
-						Tools.db(ActivityEditOrder.this).execSQL("delete from Orders where OrderID="+id.value());
+						Tools.db(ActivityEditOrder.this).execSQL("delete from [Order Details] where OrderID=" + id.value());
+						Tools.db(ActivityEditOrder.this).execSQL("delete from Orders where OrderID=" + id.value());
 						ActivityEditOrder.this.finish();
 					}
 				}, null, null, null, null);
@@ -66,7 +69,7 @@ public class ActivityEditOrder extends Activity {
 	Task promptNewItem = new Task() {
 		@Override
 		public void doTask() {
-			System.out.println("prompt new item");
+			promptItem("");
 		}
 	};
 	Task promptEmployee = new Task() {
@@ -85,8 +88,95 @@ public class ActivityEditOrder extends Activity {
 			ActivityEditOrder.this.startActivityForResult(intent, REQUEST_CUSTOMER);
 		}
 	};
-	void insert(){
-		
+
+	boolean insert() {
+		if (customerID.value().length() < 1) {
+			Auxiliary.inform("Choose customer", this);
+			return false;
+		}
+		if (employeeID.value() < 1) {
+			Auxiliary.inform("Choose emplyee", this);
+			return false;
+		}
+		if (viaID.value() < 1) {
+			Auxiliary.inform("Choose shipper", this);
+			return false;
+		}
+		String newID = "" + (20000 + (Math.floor(100000 * Math.random())));
+		String sh = Tools.sqliteFormat(shippedDate.value());
+		if (shippedDate.value().intValue() == 0) {
+			sh = "";
+		}
+		String sql = "insert into Orders ("//
+				+ "\n	OrderID"//
+				+ "\n	,CustomerID"//
+				+ "\n	,EmployeeID"//
+				+ "\n	,OrderDate"//
+				+ "\n	,RequiredDate"//
+				+ "\n	,ShippedDate"//
+				+ "\n	,ShipVia"//
+				+ "\n	,Freight"//
+				+ "\n	,ShipName"//
+				+ "\n	,ShipAddress"//
+				+ "\n	,ShipCity"//
+				+ "\n	,ShipRegion"//
+				+ "\n	,ShipPostalCode"//
+				+ "\n	,ShipCountry"//
+				+ "\n	) values ("//
+				+ "\n	" + newID//
+				+ "\n	,'" + customerID.value() + "'"//
+				+ "\n	," + employeeID.value()//
+				+ "\n	,'" + orderDate.value() + "'"//
+				+ "\n	,'" + Tools.sqliteFormat(requiredDate.value()) + "'"//
+				+ "\n	,'" + sh + "'"//
+				+ "\n	," + viaID.value()//
+				+ "\n	," + freight.value()//
+				+ "\n	,'" + shipName.value() + "'"//
+				+ "\n	,'" + shipAddress.value() + "'"//
+				+ "\n	,'" + shipCity.value() + "'"//
+				+ "\n	,'" + shipRegion.value() + "'"//
+				+ "\n	,'" + shipPostalCode.value() + "'"//
+				+ "\n	,'" + shipCountry.value() + "'"//
+				+ "\n	)"//
+		;
+		try {
+			SQLiteStatement statement = Tools.db(this).compileStatement(sql);
+			id.value("" + statement.executeInsert());
+			return true;
+		}
+		catch (Throwable t) {
+			Auxiliary.inform(t.getMessage(), this);
+		}
+		return false;
+	}
+	boolean update() {
+		String sh = Tools.sqliteFormat(shippedDate.value());
+		if (shippedDate.value().intValue() == 0) {
+			sh = "";
+		}
+		String sql = "update Orders set"//
+				+ "\n	CustomerID='" + customerID.value() + "'"//
+				+ "\n	,EmployeeID=" + employeeID.value()//
+				+ "\n	,RequiredDate='" + Tools.sqliteFormat(requiredDate.value()) + "'"//
+				+ "\n	,ShippedDate='" + sh + "'"//
+				+ "\n	,ShipVia=" + viaID.value()//
+				+ "\n	,Freight=" + freight.value()//
+				+ "\n	,ShipName='" + shipName.value() + "'"//
+				+ "\n	,ShipAddress='" + shipAddress.value() + "'"//
+				+ "\n	,ShipCity='" + shipCity.value() + "'"//
+				+ "\n	,ShipRegion='" + shipRegion.value() + "'"//
+				+ "\n	,ShipPostalCode='" + shipPostalCode.value() + "'"//
+				+ "\n	,ShipCountry='" + shipCountry.value() + "'"//
+				+ "\n	where OrderID=" + id.value()//
+		;
+		try {
+			Tools.db(this).execSQL(sql);
+			return true;
+		}
+		catch (Throwable t) {
+			Auxiliary.inform(t.getMessage(), this);
+		}
+		return false;
 	}
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
@@ -98,11 +188,15 @@ public class ActivityEditOrder extends Activity {
 				this.setTitle("Northwind UI Example - Order " + s);
 				id.value(s);
 				scatterOrder(id.value());
-			} else {
-				this.setTitle("Northwind UI Example - New order");
 			}
-		} else {
+			else {
+				this.setTitle("Northwind UI Example - New order");
+				orderDate.value(Tools.formatDate(new java.util.Date()));
+			}
+		}
+		else {
 			this.setTitle("Northwind UI Example - New order");
+			orderDate.value(Tools.formatDate(new java.util.Date()));
 		}
 		layoutless = new Layoutless(this);
 		setContentView(layoutless);
@@ -123,47 +217,22 @@ public class ActivityEditOrder extends Activity {
 				+ " 	where orders.orderid=" + id;
 		Bough data = Auxiliary.fromCursor(Tools.db(this).rawQuery(sql, null), true);
 		Bough row = data.children.get(0);
-		freight.value(row.child("Freight").value.property.value());
-		date.value(Tools.formatDate(Auxiliary.date(row.child("OrderDate").value.property.value())));
+		freight.value(Numeric.string2double(row.child("Freight").value.property.value()));
+		orderDate.value(Tools.formatDate(Auxiliary.date(row.child("OrderDate").value.property.value())));
 		customerID.value(row.child("CustomerID").value.property.value());
 		customerName.value(row.child("CustomerName").value.property.value() + ", " + row.child("CustomerCity").value.property.value());
-		employeeID.value(row.child("EmployeeID").value.property.value());
+		employeeID.value(Numeric.string2double(row.child("EmployeeID").value.property.value()));
 		employeeName.value(row.child("FirstName").value.property.value() + " " + row.child("LastName").value.property.value());
 		requiredDate.value(Numeric.string2double(row.child("RequiredDate").value.property.value()));
 		shippedDate.value(Numeric.string2double(row.child("ShippedDate").value.property.value()));
 		viaID.value(Numeric.string2double(row.child("ShipVia").value.property.value()));
-		//viaName.value(row.child("ShipperName").value.property.value());
 		shipName.value(row.child("ShipName").value.property.value());
 		shipAddress.value(row.child("ShipAddress").value.property.value());
 		shipCity.value(row.child("ShipCity").value.property.value());
 		shipRegion.value(row.child("ShipRegion").value.property.value());
 		shipPostalCode.value(row.child("ShipPostalCode").value.property.value());
 		shipCountry.value(row.child("ShipCountry").value.property.value());
-		sql = "select"//
-				+ "		details.OrderID,details.ProductID,details.UnitPrice as OrderUnitPrice,details.Quantity,details.Discount"//
-				+ "		,Products.ProductName,Products.QuantityPerUnit,Products.UnitPrice as ProductUnitPrice"//
-				+ "		,Products.CategoryID,Categories.CategoryName"//
-				+ "		,Products.SupplierID,Suppliers.CompanyName,Suppliers.City,Suppliers.Country"//
-				+ "	from [Order Details] details"//
-				+ "		join Products on Products.ProductID=details.ProductID"//
-				+ "		join Suppliers on Suppliers.SupplierID=Products.SupplierID"//
-				+ "		join Categories on Categories.CategoryID=Products.CategoryID"//
-				+ "	where details.OrderID=" + id;
-		data = Auxiliary.fromCursor(Tools.db(this).rawQuery(sql, null), true);
-		for (int i = 0; i < data.children.size(); i++) {
-			Bough r = data.children.get(i);
-			final String productID = r.child("ProductID").value.property.value();
-			Task tapItem = new Task() {
-				@Override
-				public void doTask() {
-					tapItem(productID);
-				}
-			};
-			columnSupplier.cell(r.child("CompanyName").value.property.value() + ", " + r.child("Country").value.property.value() + ", " + r.child("City").value.property.value(), tapItem);
-			columnProduct.cell(r.child("ProductName").value.property.value(), tapItem, r.child("CategoryName").value.property.value());
-			columnPrice.cell(r.child("OrderUnitPrice").value.property.value(), tapItem, r.child("ProductUnitPrice").value.property.value() + "~" + r.child("Discount").value.property.value());
-			columnQuantity.cell(r.child("Quantity").value.property.value(), tapItem, r.child("QuantityPerUnit").value.property.value());
-		}
+		requeryItems();
 	}
 	void compose() {
 		Numeric itemsSplit = new Numeric().value(0.8 * Auxiliary.screenWidth(this));
@@ -195,8 +264,8 @@ public class ActivityEditOrder extends Activity {
 						.height().is(250)//
 				);
 		layoutless.field(this, 0, "ID", new Decor(this).labelText.is(id).labelAlignLeftCenter().labelStyleMediumNormal());
-		layoutless.field(this, 1, "Order freight", new Decor(this).labelText.is(freight).labelAlignLeftCenter().labelStyleMediumNormal());
-		layoutless.field(this, 2, "Order date", new Decor(this).labelText.is(date).labelAlignLeftCenter().labelStyleMediumNormal(), 3 * Auxiliary.tapSize);
+		layoutless.field(this, 1, "Order freight", new RedactNumber(this).number.is(freight));
+		layoutless.field(this, 2, "Order date", new Decor(this).labelText.is(orderDate).labelAlignLeftCenter().labelStyleMediumNormal(), 3 * Auxiliary.tapSize);
 		layoutless.field(this, 3, "Customer", new KnobText(this).text.is(customerName).afterTap.is(promptCustomer), 7 * Auxiliary.tapSize);
 		layoutless.field(this, 4, "Employee", new KnobText(this).text.is(employeeName).afterTap.is(promptEmployee));
 		layoutless.field(this, 5, "Required date", new RedactDate(this).date.is(requiredDate).format.is("MM/dd/yyyy"), 3 * Auxiliary.tapSize);
@@ -208,6 +277,19 @@ public class ActivityEditOrder extends Activity {
 		layoutless.field(this, 11, "Ship region", new RedactText(this).text.is(shipRegion));
 		layoutless.field(this, 12, "Ship postal code", new RedactText(this).text.is(shipPostalCode), 3 * Auxiliary.tapSize);
 		layoutless.field(this, 13, "Ship country", new RedactText(this).text.is(shipCountry));
+		layoutless.child(new Knob(this)//
+				.labelText.is("Clear")//
+				.afterTap.is(new Task() {
+					@Override
+					public void doTask() {
+						shippedDate.value(0);
+					}
+				})//
+						.left().is(layoutless.shiftX.property.plus(layoutless.width().property.multiply(0.3).plus((0.1 + 3) * Auxiliary.tapSize)))//
+						.top().is(layoutless.shiftY.property.plus(0.2 * Auxiliary.tapSize).plus(0.8 * 6 * Auxiliary.tapSize))//
+						.width().is(1.5 * Auxiliary.tapSize)//
+						.height().is(0.8 * Auxiliary.tapSize)//
+				);
 		layoutless.child(new Knob(this)//
 				.labelText.is("Save")//
 				.afterTap.is(save)//
@@ -266,10 +348,18 @@ public class ActivityEditOrder extends Activity {
 		layoutless.innerWidth.is(Auxiliary.screenWidth(this) * 0.3 + 9.1 * Auxiliary.tapSize);
 		layoutless.innerHeight.is(0.8 * 15 * Auxiliary.tapSize + 2 * 0.2 * Auxiliary.tapSize);
 	}
-	void tapItem(String productID) {
+	void promptItem(String productID) {
+		if (id.value().length() < 1) {
+			if (!insert()) {
+				return;
+			}
+		}
 		Intent intent = new Intent();
 		intent.setClass(this, ActivityEditItem.class);
 		intent.putExtra("product", productID);
+		intent.putExtra("date", orderDate.value());
+		intent.putExtra("employee", employeeName.value());
+		intent.putExtra("customer", customerName.value());
 		intent.putExtra("order", id.value());
 		this.startActivityForResult(intent, REQUEST_ITEM);
 	}
@@ -284,10 +374,40 @@ public class ActivityEditOrder extends Activity {
 		String sql = "select FirstName,LastName from Employees where EmployeeID=" + id;
 		Bough data = Auxiliary.fromCursor(Tools.db(this).rawQuery(sql, null), true);
 		Bough row = data.children.get(0);
-		employeeID.value(id);
+		employeeID.value(Numeric.string2double(id));
 		employeeName.value(row.child("FirstName").value.property.value() + " " + row.child("LastName").value.property.value());
 	}
 	void onItemResult() {
+		details.clearColumns();
+		requeryItems();
+		details.refresh();
+	}
+	void requeryItems() {
+		String sql = "select"//
+				+ "		details.OrderID,details.ProductID,details.UnitPrice as OrderUnitPrice,details.Quantity,details.Discount"//
+				+ "		,Products.ProductName,Products.QuantityPerUnit,Products.UnitPrice as ProductUnitPrice"//
+				+ "		,Products.CategoryID,Categories.CategoryName"//
+				+ "		,Products.SupplierID,Suppliers.CompanyName,Suppliers.City,Suppliers.Country"//
+				+ "	from [Order Details] details"//
+				+ "		join Products on Products.ProductID=details.ProductID"//
+				+ "		join Suppliers on Suppliers.SupplierID=Products.SupplierID"//
+				+ "		join Categories on Categories.CategoryID=Products.CategoryID"//
+				+ "	where details.OrderID=" + id.value();
+		Bough data = Auxiliary.fromCursor(Tools.db(this).rawQuery(sql, null), true);
+		for (int i = 0; i < data.children.size(); i++) {
+			Bough r = data.children.get(i);
+			final String productID = r.child("ProductID").value.property.value();
+			Task tapItem = new Task() {
+				@Override
+				public void doTask() {
+					promptItem(productID);
+				}
+			};
+			columnSupplier.cell(r.child("CompanyName").value.property.value() + ", " + r.child("Country").value.property.value() + ", " + r.child("City").value.property.value(), tapItem);
+			columnProduct.cell(r.child("ProductName").value.property.value(), tapItem, r.child("CategoryName").value.property.value());
+			columnPrice.cell(r.child("OrderUnitPrice").value.property.value(), tapItem, r.child("ProductUnitPrice").value.property.value() + "~" + r.child("Discount").value.property.value());
+			columnQuantity.cell(r.child("Quantity").value.property.value(), tapItem, r.child("QuantityPerUnit").value.property.value());
+		}
 	}
 	@Override
 	protected void onActivityResult(int requestCode, int resultCode, Intent intent) {

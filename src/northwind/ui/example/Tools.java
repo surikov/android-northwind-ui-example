@@ -13,7 +13,8 @@ import android.os.Environment;
 public class Tools {
 	public static SQLiteDatabase database;
 	public static String dbPath = "";
-	static SimpleDateFormat toFormater = new SimpleDateFormat("MM/dd/yyyy");
+	static SimpleDateFormat toFormatter = new SimpleDateFormat("MM/dd/yyyy");
+	static SimpleDateFormat sqliteFormatter = new SimpleDateFormat("yyyy-MM-dd 00:00:00.000");
 	//static SimpleDateFormat fromFormater = new SimpleDateFormat("MM/DD/yyyy");
 	//static SimpleDateFormat toFormater = new SimpleDateFormat("yyyy-MM-DD");
 	public static SQLiteDatabase db(Activity activity) {
@@ -33,10 +34,15 @@ public class Tools {
 		Auxiliary.exportResource(activity, dbPath, R.raw.northwind);
 		//db = this.openOrCreateDatabase(file, Context.MODE_PRIVATE, null);
 	}
+	public static String sqliteFormat(double time){
+		java.util.Date d=new Date();
+		d.setTime((long)time);
+		return sqliteFormatter.format(d);
+	}
 	public static String formatDate(java.util.Date d) {
 		String r = "";
 		try {
-			r = toFormater.format(d);
+			r = toFormatter.format(d);
 		}
 		catch (Throwable t) {
 		}
