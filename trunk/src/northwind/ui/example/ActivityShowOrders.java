@@ -1,6 +1,7 @@
 package northwind.ui.example;
 
 import reactive.ui.*;
+import android.net.Uri;
 import android.os.*;
 import android.app.*;
 import android.content.*;
@@ -36,6 +37,14 @@ public class ActivityShowOrders extends Activity {
 		public void doTask() {
 			shippedOnly.value(!shippedOnly.value());
 			refresh.start(ActivityShowOrders.this);
+		}
+	};
+	Task about = new Task() {
+		@Override
+		public void doTask() {
+			String link="https://code.google.com/p/android-northwind-ui-example/";
+			Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(link));
+			startActivity(browserIntent);
 		}
 	};
 	Expect refresh = new Expect().status.is("Wait...").task.is(new Task() {
@@ -109,12 +118,14 @@ public class ActivityShowOrders extends Activity {
 	}
 	void compose() {
 		columnMenu//
-				.cell("New ordes", newOrder, "Create new order")//
-				.cell("Unhipped orders only", filter, "Show/hide shipped orders")//
+				.cell("New order", newOrder, "Create new order")//
+				.cell("Unshipped orders only", filter, "Show/hide shipped orders")//
+				.cell("About", about, "About this application...")//
 		;
 		columnIcon//
 				.cell(Bitmap.createScaledBitmap(BitmapFactory.decodeResource(getResources(), R.drawable.add), Auxiliary.tapSize, Auxiliary.tapSize, true))//
 				.cell(Bitmap.createScaledBitmap(BitmapFactory.decodeResource(getResources(), R.drawable.filter), Auxiliary.tapSize, Auxiliary.tapSize, true))//
+				.cell(Bitmap.createScaledBitmap(BitmapFactory.decodeResource(getResources(), R.drawable.info), Auxiliary.tapSize, Auxiliary.tapSize, true))//
 		;
 		Numeric menuSplit = new Numeric().value(0.8 * Auxiliary.screenWidth(this));
 		layoutless.child(new Decor(this)//
@@ -184,8 +195,8 @@ public class ActivityShowOrders extends Activity {
 						.rightSide(new DataGrid(this)//
 								.noHead.is(true)//
 										.columns(new Column[] {//
-												columnIcon.title.is("Icon").width.is(Auxiliary.tapSize) //
-														, columnMenu.title.is("Menu").width.is(layoutless.width().property).noVerticalBorder.is(true) //
+												columnIcon.title.is("Icon").width.is(Auxiliary.tapSize).noVerticalBorder.is(true).noHorizontalBorder.is(true) //
+														, columnMenu.title.is("Menu").width.is(layoutless.width().property).noVerticalBorder.is(true).noHorizontalBorder.is(true) //
 												})//
 						)//
 						.width().is(layoutless.width().property)//

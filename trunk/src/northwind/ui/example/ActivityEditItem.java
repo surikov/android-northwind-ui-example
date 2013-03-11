@@ -17,6 +17,7 @@ import android.graphics.*;
 public class ActivityEditItem extends Activity {
 	Layoutless layoutless;
 	Note product = new Note();
+	String productInDB = "";
 	Note order = new Note();
 	Note orderDate = new Note();
 	Note orderEmplyee = new Note();
@@ -26,14 +27,66 @@ public class ActivityEditItem extends Activity {
 	Numeric orderPrice = new Numeric();
 	Numeric orderDiscount = new Numeric();
 	Numeric orderQuantity = new Numeric();
+	boolean insertFlag = false;
 	Task save = new Task() {
 		@Override
 		public void doTask() {
+			if (product.value().equals("0")) {
+				Auxiliary.inform("Choose product", ActivityEditItem.this);
+				return;
+			}
+			if (orderDiscount.value() < 0.0 || orderDiscount.value() > 1.0) {
+				Auxiliary.inform("Discount should be 0.0 - 1.0", ActivityEditItem.this);
+				return;
+			}
+			if (orderQuantity.value() <= 0.0) {
+				Auxiliary.inform("Quantity should be more then 0.0", ActivityEditItem.this);
+				return;
+			}
+			if (orderPrice.value() <= 0.0) {
+				Auxiliary.inform("UnitPrice should be more then 0.0", ActivityEditItem.this);
+				return;
+			}
+			String sql = "";
+			if (insertFlag) {
+				sql = "insert into [Order Details] ("//
+						+ "OrderID,ProductID,UnitPrice,Quantity,Discount"//
+						+ ") values (" //
+						+ order.value() //
+						+ "," + product.value()// 
+						+ "," + orderPrice.value()// 
+						+ "," + orderQuantity.value()// 
+						+ "," + orderDiscount.value() //
+						+ ")";
+			}
+			else {
+				sql = "update [Order Details] set"//
+						+ " ProductID=" + product.value()//
+						+ ",UnitPrice=" + orderPrice.value()//
+						+ ",Quantity=" + orderQuantity.value()//
+						+ ",Discount=" + orderDiscount.value()//
+						+ " where OrderID=" + order.value() + " and ProductID=" + productInDB;
+			}
+			try {
+				Tools.db(ActivityEditItem.this).execSQL(sql);
+			}
+			catch (Throwable t) {
+				Auxiliary.inform(t.getMessage(), ActivityEditItem.this);
+				t.printStackTrace();
+			}
+			Intent intent = ActivityEditItem.this.getIntent();
+			ActivityEditItem.this.setResult(RESULT_OK, intent);
+			finish();
 		}
 	};
 	Task delete = new Task() {
 		@Override
 		public void doTask() {
+			String sql = "delete from [Order Details] where OrderID=" + order.value() + " and ProductID=" + product.value();
+			Tools.db(ActivityEditItem.this).execSQL(sql);
+			Intent intent = ActivityEditItem.this.getIntent();
+			ActivityEditItem.this.setResult(RESULT_OK, intent);
+			finish();
 		}
 	};
 	Task prompt = new Task() {
@@ -51,17 +104,24 @@ public class ActivityEditItem extends Activity {
 		layoutless = new Layoutless(this);
 		setContentView(layoutless);
 		Bundle bundle = getIntent().getExtras();
-		String sproduct = bundle.getString("product");
-		String sorder = bundle.getString("order");
-		if (sorder != null) {
-			//formTitle.value("Order " + s);
-			this.setTitle("Northwind UI Example - Order item");
-			order.value(sorder);
-			product.value(sproduct);
+		String sproduct = null;
+		if (bundle != null) {
+			sproduct = bundle.getString("product");
+			if (sproduct.length() > 0) {
+				this.setTitle("Northwind UI Example - Order item");
+				product.value(sproduct);
+				productInDB = sproduct;
+			}
+			else {
+				product.value("0");
+				this.setTitle("Northwind UI Example - New order item");
+				insertFlag = true;
+			}
+			order.value(bundle.getString("order"));
+			orderDate.value(bundle.getString("date"));
+			orderEmplyee.value(bundle.getString("employee"));
+			orderCustomer.value(bundle.getString("customer"));
 			scatterOrder(product.value(), order.value());
-		}
-		else {
-			this.setTitle("Northwind UI Example - New order item");
 		}
 		compose();
 	}
@@ -75,7 +135,7 @@ public class ActivityEditItem extends Activity {
 				+ " 	,Employees.FirstName,Employees.LastName"//
 				+ " 	,Customers.CompanyName as Customer"//
 				+ "	from [Order Details] details"//
-				+ "		join Products on Products.ProductID=details.ProductID"//
+				+ "		left join Products on Products.ProductID=details.ProductID"//
 				+ "		join Suppliers on Suppliers.SupplierID=Products.SupplierID"//
 				+ "		join Categories on Categories.CategoryID=Products.CategoryID"//
 				+ " 	join Orders on Orders.OrderID=details.OrderID"//
@@ -83,15 +143,15 @@ public class ActivityEditItem extends Activity {
 				+ " 	join Customers on Orders.CustomerID=Customers.CustomerID"//
 				+ "	where details.OrderID=" + o + " and details.ProductID=" + p;
 		Bough data = Auxiliary.fromCursor(Tools.db(this).rawQuery(sql, null), true);
-		Bough row = data.children.get(0);
-		orderDate.value(Tools.formatDate(Auxiliary.date(row.child("OrderDate").value.property.value())));
-		orderEmplyee.value(row.child("FirstName").value.property.value() + " " + row.child("LastName").value.property.value());
-		orderCustomer.value(row.child("Customer").value.property.value());
-		orderProduct.value(row.child("ProductName").value.property.value() + ", " + row.child("CategoryName").value.property.value());
-		stockPrice.value(row.child("ProductUnitPrice").value.property.value() + " x " + row.child("QuantityPerUnit").value.property.value());
-		orderPrice.value(Numeric.string2double(row.child("OrderUnitPrice").value.property.value()));
-		orderDiscount.value(Numeric.string2double(row.child("Discount").value.property.value()));
-		orderQuantity.value(Numeric.string2double(row.child("Quantity").value.property.value()));
+		if (data.children.size() > 0) {
+			Bough row = data.children.get(0);
+			orderCustomer.value(row.child("Customer").value.property.value());
+			orderProduct.value(row.child("ProductName").value.property.value() + ", " + row.child("CategoryName").value.property.value());
+			stockPrice.value(row.child("ProductUnitPrice").value.property.value() + " x " + row.child("QuantityPerUnit").value.property.value());
+			orderPrice.value(Numeric.string2double(row.child("OrderUnitPrice").value.property.value()));
+			orderDiscount.value(Numeric.string2double(row.child("Discount").value.property.value()));
+			orderQuantity.value(Numeric.string2double(row.child("Quantity").value.property.value()));
+		}
 	}
 	void compose() {
 		layoutless//
@@ -161,6 +221,7 @@ public class ActivityEditItem extends Activity {
 						+ "	where Products.ProductID=" + productID;
 				Bough data = Auxiliary.fromCursor(Tools.db(this).rawQuery(sql, null), true);
 				Bough row = data.children.get(0);
+				product.value(productID);
 				orderProduct.value(row.child("ProductName").value.property.value() + ", " + row.child("CategoryName").value.property.value());
 				stockPrice.value(row.child("ProductUnitPrice").value.property.value() + " x " + row.child("QuantityPerUnit").value.property.value());
 			}
