@@ -15,8 +15,6 @@ public class Tools {
 	public static String dbPath = "";
 	static SimpleDateFormat toFormatter = new SimpleDateFormat("MM/dd/yyyy");
 	static SimpleDateFormat sqliteFormatter = new SimpleDateFormat("yyyy-MM-dd 00:00:00.000");
-	//static SimpleDateFormat fromFormater = new SimpleDateFormat("MM/DD/yyyy");
-	//static SimpleDateFormat toFormater = new SimpleDateFormat("yyyy-MM-DD");
 	public static SQLiteDatabase db(Activity activity) {
 		if (database == null) {
 			
@@ -32,7 +30,6 @@ public class Tools {
 		new File(dir).mkdir();
 		dbPath = dir + "northwind.sqlite.db";
 		Auxiliary.exportResource(activity, dbPath, R.raw.northwind);
-		//db = this.openOrCreateDatabase(file, Context.MODE_PRIVATE, null);
 	}
 	public static String sqliteFormat(double time){
 		java.util.Date d=new Date();
