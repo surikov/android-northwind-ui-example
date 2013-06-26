@@ -5,6 +5,7 @@ import android.net.Uri;
 import android.os.*;
 import android.app.*;
 import android.content.*;
+import android.database.Cursor;
 import android.graphics.*;
 import tee.binding.*;
 import tee.binding.it.*;
@@ -42,7 +43,7 @@ public class ActivityShowOrders extends Activity {
 	Task about = new Task() {
 		@Override
 		public void doTask() {
-			String link="https://code.google.com/p/android-northwind-ui-example/";
+			String link = "https://code.google.com/p/android-northwind-ui-example/";
 			Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(link));
 			startActivity(browserIntent);
 		}
@@ -75,11 +76,9 @@ public class ActivityShowOrders extends Activity {
 		}
 		sql = sql + " 	order by Orders.OrderDate desc,Orders.OrderID desc"//
 				+ " limit " + (pageSize * 3) + " offset " + ordersOffset.value().intValue();
-		Bough data = Auxiliary.fromCursor(Tools.db(this).rawQuery(sql, null), true);
-		//System.out.println("requery done " + data.children.size());
-		for (int i = 0; i < data.children.size(); i++) {
-			Bough row = data.children.get(i);
-			final String orderID = row.child("OrderID").value.property.value();
+		Cursor c = Tools.db(this).rawQuery(sql, null);
+		while (c.moveToNext()) {
+			final String orderID = Auxiliary.cursorSrtring(c, "OrderID");
 			Task tapOrder = new Task() {
 				@Override
 				public void doTask() {
@@ -87,14 +86,14 @@ public class ActivityShowOrders extends Activity {
 				}
 			};
 			columnOrderID.cell(orderID, tapOrder);
-			String orderDate = Tools.formatDate(Auxiliary.date(row.child("OrderDate").value.property.value()));
-			String shipDate = Tools.formatDate(Auxiliary.date(row.child("RequiredDate").value.property.value()));
-			String doneDate = Tools.formatDate(Auxiliary.date(row.child("ShippedDate").value.property.value()));
-			columnOrderDate.cell(orderDate, tapOrder, row.child("FirstName").value.property.value() + " " + row.child("LastName").value.property.value());
-			columnShipDate.cell(shipDate, tapOrder, row.child("Shipper").value.property.value());
+			String orderDate = Tools.formatDate(Auxiliary.date(Auxiliary.cursorDate(c, "OrderDate")));
+			String shipDate = Tools.formatDate(Auxiliary.date(Auxiliary.cursorDate(c, "RequiredDate")));
+			String doneDate = Tools.formatDate(Auxiliary.date(Auxiliary.cursorDate(c, "ShippedDate")));
+			columnOrderDate.cell(orderDate, tapOrder, Auxiliary.cursorSrtring(c, "FirstName") + " " + Auxiliary.cursorSrtring(c, "LastName"));
+			columnShipDate.cell(shipDate, tapOrder, Auxiliary.cursorSrtring(c, "Shipper"));
 			columnDoneDate.cell(doneDate, tapOrder);
-			columnCustomer.cell(row.child("Customer").value.property.value(), tapOrder);
-			columnFreight.cell(row.child("Freight").value.property.value(), tapOrder);
+			columnCustomer.cell(Auxiliary.cursorSrtring(c, "Customer"));
+			columnFreight.cell(Auxiliary.cursorSrtring(c, "Freight"));
 		}
 	}
 	void tapOrder(String orderID) {
