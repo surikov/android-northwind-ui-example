@@ -78,7 +78,7 @@ public class ActivityShowOrders extends Activity {
 				+ " limit " + (pageSize * 3) + " offset " + ordersOffset.value().intValue();
 		Cursor c = Tools.db(this).rawQuery(sql, null);
 		while (c.moveToNext()) {
-			final String orderID = Auxiliary.cursorSrtring(c, "OrderID");
+			final String orderID = Auxiliary.cursorString(c, "OrderID");
 			Task tapOrder = new Task() {
 				@Override
 				public void doTask() {
@@ -89,11 +89,11 @@ public class ActivityShowOrders extends Activity {
 			String orderDate = Tools.formatDate(Auxiliary.date(Auxiliary.cursorDate(c, "OrderDate")));
 			String shipDate = Tools.formatDate(Auxiliary.date(Auxiliary.cursorDate(c, "RequiredDate")));
 			String doneDate = Tools.formatDate(Auxiliary.date(Auxiliary.cursorDate(c, "ShippedDate")));
-			columnOrderDate.cell(orderDate, tapOrder, Auxiliary.cursorSrtring(c, "FirstName") + " " + Auxiliary.cursorSrtring(c, "LastName"));
-			columnShipDate.cell(shipDate, tapOrder, Auxiliary.cursorSrtring(c, "Shipper"));
+			columnOrderDate.cell(orderDate, tapOrder, Auxiliary.cursorString(c, "FirstName") + " " + Auxiliary.cursorString(c, "LastName"));
+			columnShipDate.cell(shipDate, tapOrder, Auxiliary.cursorString(c, "Shipper"));
 			columnDoneDate.cell(doneDate, tapOrder);
-			columnCustomer.cell(Auxiliary.cursorSrtring(c, "Customer"));
-			columnFreight.cell(Auxiliary.cursorSrtring(c, "Freight"));
+			columnCustomer.cell(Auxiliary.cursorString(c, "Customer"));
+			columnFreight.cell(Auxiliary.cursorString(c, "Freight"));
 		}
 	}
 	void tapOrder(String orderID) {
